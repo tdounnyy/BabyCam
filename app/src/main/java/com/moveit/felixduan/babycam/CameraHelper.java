@@ -49,12 +49,20 @@ public class CameraHelper {
     }
 
     public void releaseCamera() {
+        Utils.log("releaseCamera");
         if (mCamera != null) {
-
+            // stop preview before making changes
+            try {
+                mPreview.getHolder().removeCallback(mPreview);
+                mCamera.stopPreview();
+            } catch (Exception e) {
+                // ignore: tried to stop a non-existent preview
+            }
             mCamera.release();        // release the camera for other applications
             mCamera = null;
         }
     }
+
     private List<Camera.Size> getSupportedPictureSizes() {
         if (mCamera == null)
             return null;
@@ -82,10 +90,15 @@ public class CameraHelper {
     }
 
     public void takePictureDelay(int delay) {
-        mWorker.sendEmptyMessageDelayed(TAKE_PIC, delay);
+        Utils.log("takePictureDelay");
+        if (delay <0 )
+            stopShooting();
+        else
+            mWorker.sendEmptyMessageDelayed(TAKE_PIC, delay);
     }
 
     public void stopShooting() {
+        Utils.log("stopShooting");
         mWorker.removeMessages(TAKE_PIC);
     }
 
@@ -98,7 +111,7 @@ public class CameraHelper {
                 case TAKE_PIC:
                     Utils.log("handleMessage TAKE_PIC");
                     // get an image from the camera
-                    mCamera.takePicture(null, null, mPicture);
+//                    mCamera.takePicture(null, null, mPicture);
                     Toast.makeText(mContext, "take picture", Toast.LENGTH_SHORT).show();
                     mWorker.sendEmptyMessageDelayed(TAKE_PIC, 5000);
                     break;
