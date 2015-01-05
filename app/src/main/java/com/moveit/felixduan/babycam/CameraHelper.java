@@ -111,7 +111,7 @@ public class CameraHelper {
                 case TAKE_PIC:
                     Utils.log("handleMessage TAKE_PIC");
                     // get an image from the camera
-//                    mCamera.takePicture(null, null, mPicture);
+                    mCamera.takePicture(null, null, mPicture);
                     Toast.makeText(mContext, "take picture", Toast.LENGTH_SHORT).show();
                     mWorker.sendEmptyMessageDelayed(TAKE_PIC, 5000);
                     break;

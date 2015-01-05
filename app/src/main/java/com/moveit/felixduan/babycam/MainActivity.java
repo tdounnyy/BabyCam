@@ -5,7 +5,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ToggleButton;
 
@@ -30,7 +29,9 @@ public class MainActivity extends Activity {
         Utils.log("onCreate");
         setContentView(R.layout.activity_main);
         pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        mLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BabyCam");
+        mLock = pm.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "BabyCam");
+
+
         //        mCameraHelper = new CameraHelper(this);
         //        // Create our Preview view and set it as the content of our activity.
         //        FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
@@ -51,7 +52,7 @@ public class MainActivity extends Activity {
 //                            params.screenBrightness = 0;
 //                            getWindow().setAttributes(params);
 
-                                                        mLock.acquire(1000);
+                            mLock.acquire();
 
                             // get an image from the camera
                             mCameraHelper.takePictureDelay(0);
@@ -63,7 +64,7 @@ public class MainActivity extends Activity {
 //                            params.screenBrightness = 50;
 //                            getWindow().setAttributes(params);
 
-                                                        mLock.release();
+                            mLock.release();
 
                             mCameraHelper.takePictureDelay(-1);
                             mShootBtn.setTextColor(0xffffffff);
@@ -92,5 +93,6 @@ public class MainActivity extends Activity {
         mCameraHelper.releaseCamera();
         mShootBtn.setChecked(false);
         mShootBtn.setTextColor(0xffffffff);
+        if (mLock.isHeld()) mLock.release();
     }
 }
