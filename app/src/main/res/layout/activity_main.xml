@@ -21,4 +21,16 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         />
+
+    <TextView
+        android:id="@+id/lapse_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/lapse_label"/>
+    <Spinner
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/lapse_spinner"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/lapse_tv"/>
 </RelativeLayout>

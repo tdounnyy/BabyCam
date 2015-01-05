@@ -103,6 +103,7 @@ public class CameraHelper {
     }
 
     private static final int TAKE_PIC = 1;
+    private int mLapse = 5000;
     Handler mWorker = new Handler(){
         @Override
         public void handleMessage(Message msg) {
@@ -113,7 +114,7 @@ public class CameraHelper {
                     // get an image from the camera
                     mCamera.takePicture(null, null, mPicture);
                     Toast.makeText(mContext, "take picture", Toast.LENGTH_SHORT).show();
-                    mWorker.sendEmptyMessageDelayed(TAKE_PIC, 5000);
+                    mWorker.sendEmptyMessageDelayed(TAKE_PIC, mLapse);
                     break;
                 default:
                     break;
@@ -188,4 +189,9 @@ public class CameraHelper {
         return mediaFile;
     }
 
+    // In seconds
+    public void setTimeLapse(int lapse) {
+        Utils.log("setTimeLapse");
+        mLapse = lapse * 1000;
+    }
 }

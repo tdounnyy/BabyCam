@@ -5,7 +5,10 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
+import android.widget.Spinner;
 import android.widget.ToggleButton;
 
 // TODO Code refactor
@@ -16,12 +19,14 @@ import android.widget.ToggleButton;
 // TODO Storage take up calculate
 // TODO Photo save location toast
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements AdapterView.OnItemSelectedListener {
 
     private CameraHelper mCameraHelper;
     private ToggleButton mShootBtn;
     private PowerManager.WakeLock mLock;
     private PowerManager pm;
+    private Spinner mLapseSpinner;
+    private int[] mLapseValues;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -73,6 +78,17 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+        mLapseSpinner = (Spinner) findViewById(R.id.lapse_spinner);
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.lapse_items, android.R.layout.simple_spinner_item);
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mLapseValues = getResources().getIntArray(R.array.lapse_items_value);
+        // Apply the adapter to the spinner
+        mLapseSpinner.setAdapter(adapter);
+        mLapseSpinner.setOnItemSelectedListener(this);
     }
 
     @Override
@@ -94,5 +110,17 @@ public class MainActivity extends Activity {
         mShootBtn.setChecked(false);
         mShootBtn.setTextColor(0xffffffff);
         if (mLock.isHeld()) mLock.release();
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        Utils.log("onItemSelected " +  view.getId() + " " + position + " " + id
+                + " " + mLapseValues[position]);
+        mCameraHelper.setTimeLapse(mLapseValues[position]);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+        Utils.log("onNothingSelected");
     }
 }
