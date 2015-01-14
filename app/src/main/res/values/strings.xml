@@ -7,4 +7,6 @@
     <string name="capture">Capture</string>
     <string name="stop">Stop</string>
     <string name="lapse_label">Time lapse in seconds :</string>
+    <string name="title_activity_shell">ShellActivity</string>
+
 </resources>
