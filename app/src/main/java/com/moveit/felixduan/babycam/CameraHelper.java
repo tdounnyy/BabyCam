@@ -25,31 +25,19 @@ public class CameraHelper {
     private List<Camera.Size> mSizes;
     protected CameraPreview mPreview;
 
-    public CameraHelper(Context context) {
+    public CameraHelper(Context context, Camera c) {
+        Utils.log("CameraHelper   constructor");
         mContext = context;
-        releaseCamera();
-        mCamera = getCameraInstance();
+        resetCamera();
+        //mCamera = getCameraInstance();
+        mCamera = c;
+        mPreview = new CameraPreview(mContext, mCamera);
         mSizes = getSupportedPictureSizes();
         setLargestPictureSize();
-        mPreview = new CameraPreview(mContext, mCamera);
     }
 
-    /** A safe way to get an instance of the Camera object. */
-    private Camera getCameraInstance(){
-        Utils.log("getCameraInstance");
-        Camera c = null;
-        try {
-            c = Camera.open(); // attempt to get a Camera instance
-        }
-        catch (Exception e){
-            // Camera is not available (in use or does not exist)
-            Utils.log("open camera fail");
-        }
-        return c; // returns null if camera is unavailable
-    }
-
-    public void releaseCamera() {
-        Utils.log("releaseCamera");
+    public void resetCamera() {
+        Utils.log("resetCamera");
         if (mCamera != null) {
             // stop preview before making changes
             try {

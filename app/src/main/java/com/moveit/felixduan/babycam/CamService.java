@@ -31,6 +31,8 @@ public class CamService extends Service implements SurfaceHolder.Callback {
     WindowManager mWindowManger;
     private ViewGroup mFloatView;
 
+    public static boolean isRunning = false;
+
     private static final int TAKE_PIC = 1;
     private int mLapse = 5000;
     Handler mWorker = new Handler() {
@@ -88,190 +90,209 @@ public class CamService extends Service implements SurfaceHolder.Callback {
 
     }
 
-        @Override
-        public int onStartCommand(Intent intent, int flags, int startId) {
-            Utils.log(TAG + " onStartCommand");
-            addView();
-            //try {
-                mCamera = Camera.open();
-                //mCamera.setPreviewDisplay(mSurface.getHolder());
-                setLargestPictureSize();
-            //} catch (IOException e) {
-            //    e.printStackTrace();
-            //    Utils.log(TAG + " IOException " + e);
-            //}
-            //mCamera.startPreview();
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Utils.log(TAG + " onStartCommand");
+        addView();
+        //try {
+        mCamera = Camera.open();
+        //mCamera.setPreviewDisplay(mSurface.getHolder());
+        setLargestPictureSize();
+        //} catch (IOException e) {
+        //    e.printStackTrace();
+        //    Utils.log(TAG + " IOException " + e);
+        //}
+        //mCamera.startPreview();
 
-            mWorker.sendEmptyMessageDelayed(TAKE_PIC, 1000);
-            return super.onStartCommand(intent, flags, startId);
+        mWorker.sendEmptyMessageDelayed(TAKE_PIC, 1000);
+        isRunning = true;
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    @Override
+    public void onDestroy() {
+        Utils.log(TAG + " onDestroy");
+        stopShooting();
+        removeView();
+        if (mCamera != null) {
+            mCamera.stopPreview();
+            mCamera.release();
+            mCamera = null;
+        }
+        mFloatView = null;
+
+        isRunning = false;
+        super.onDestroy();
+    }
+
+    private void addView() {
+        Utils.log(TAG + " addView");
+        mFloatView = getFloatView(this);
+        FrameLayout container = (FrameLayout) mFloatView.findViewById(R.id.camera_preview);
+        container.addView(mSurface);
+        WindowManager.LayoutParams param = new WindowManager.LayoutParams();
+        param.width = 1052; // Magic hack
+        param.height = 780;// Magic hack
+        param.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        param.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        param.gravity = Gravity.CENTER;
+        param.setTitle("CamSurface");
+        mWindowManger.addView(mFloatView, param);
+    }
+
+    private ViewGroup getFloatView(Context context) {
+        return (ViewGroup) LayoutInflater.from(context).inflate(R.layout.float_view, null);
+    }
+
+    private void removeView() {
+        Utils.log(TAG + " removeView");
+        if (mSurface != null) {
+            mSurface.getHolder().removeCallback(this);
+            //mWindowManger.removeView(mSurface);
+            mWindowManger.removeView(mFloatView);
+            mSurface = null;
+        }
+    }
+
+    private void stopShooting() {
+        mWorker.removeMessages(TAKE_PIC);
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Utils.log(TAG + " onBind");
+        return null;
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        Utils.log(TAG + " surfaceCreated");
+        // The Surface has been created, now tell the camera where to draw the preview.
+        try {
+            mCamera.setPreviewDisplay(holder);
+            mCamera.startPreview();
+        } catch (IOException e) {
+            Utils.log("Error setting camera preview: " + e.getMessage());
         }
 
-        @Override
-        public void onDestroy() {
-            Utils.log(TAG + " onDestroy");
-            removeView();
-            if (mCamera != null) {
-                mCamera.stopPreview();
-                mCamera.release();
-                mCamera = null;
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        Utils.log(TAG + " surfaceChanged");
+        // If your preview can change or rotate, take care of those events here.
+        // Make sure to stop the preview before resizing or reformatting it.
+
+        if (holder.getSurface() == null) {
+            // preview surface does not exist
+            return;
+        }
+
+        // stop preview before making changes
+        try {
+            mCamera.stopPreview();
+        } catch (Exception e) {
+            // ignore: tried to stop a non-existent preview
+        }
+
+        // set preview size and make any resize, rotate or
+        // reformatting changes here
+
+        // start preview with new settings
+        try {
+            mCamera.setPreviewDisplay(holder);
+            mCamera.startPreview();
+
+        } catch (Exception e) {
+            Utils.log("Error starting camera preview: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        Utils.log(TAG + " surafceDestroyed");
+
+    }
+
+
+    private List<Camera.Size> mSizes;
+
+    private List<Camera.Size> getSupportedPictureSizes() {
+        if (mCamera == null)
+            return null;
+        return mCamera.getParameters().getSupportedPictureSizes();
+    }
+
+    private void setLargestPictureSize() {
+        mSizes = getSupportedPictureSizes();
+        if (mCamera == null || mSizes == null) return;
+        Camera.Parameters params = mCamera.getParameters();
+        int maxSize = 0;
+        int height = 0;
+        int width = 0;
+        for (int i = 0; i < mSizes.size(); i++) {
+            Camera.Size size = mSizes.get(i);
+            if (maxSize <= size.height * size.width) {
+                height = size.height;
+                width = size.width;
+                maxSize = height * width;
             }
-            mFloatView = null;
-            super.onDestroy();
         }
+        params.setPictureSize(width, height);
 
-        private void addView() {
-            Utils.log(TAG + " addView");
-            mFloatView = getFloatView(this);
-            FrameLayout container = (FrameLayout) mFloatView.findViewById(R.id.camera_preview);
-            container.addView(mSurface);
-            WindowManager.LayoutParams param = new WindowManager.LayoutParams();
-            param.width = 1052; // Magic hack
-            param.height = 780;// Magic hack
-            param.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
-            param.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-            param.gravity = Gravity.CENTER;
-            param.setTitle("CamSurface");
-            mWindowManger.addView(mFloatView, param);
-        }
+        Utils.log("size = " + params.getPictureSize().width + " " + params.getPictureSize().height);
+        mCamera.setParameters(params);
+    }
 
-        private ViewGroup getFloatView(Context context) {
-            return (ViewGroup) LayoutInflater.from(context).inflate(R.layout.float_view, null);
-        }
+    /**
+     * Create a File for saving an image or video
+     */
+    private File getOutputMediaFile(int type) {
+        Utils.log("getOutputMediaFile");
 
-        private void removeView() {
-            Utils.log(TAG + " removeView");
-            if (mSurface != null) {
-                mSurface.getHolder().removeCallback(this);
-                //mWindowManger.removeView(mSurface);
-                mWindowManger.removeView(mFloatView);
-                mSurface = null;
+        // To be safe, you should check that the SDCard is mounted
+        // using Environment.getExternalStorageState() before doing this.
+
+        File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "BabyCam");
+        //        File mediaStorageDir = Environment.getExternalStoragePublicDirectory(
+        //                Environment.DIRECTORY_DCIM);
+        // This location works best if you want the created images to be shared
+        // between applications and persist after your app has been uninstalled.
+
+        // Create the storage directory if it does not exist
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                Utils.log("failed to create directory: MyCameraApp");
+                return null;
             }
         }
 
-
-        @Override
-        public IBinder onBind(Intent intent) {
-            Utils.log(TAG + " onBind");
+        // Create a media file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        File mediaFile;
+        if (type == MEDIA_TYPE_IMAGE) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                    "BABYPIC_" + timeStamp + ".jpg");
+        } else if (type == MEDIA_TYPE_VIDEO) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+                    "VID_" + timeStamp + ".mp4");
+        } else {
             return null;
         }
 
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-            Utils.log(TAG + " surfaceCreated");
-            // The Surface has been created, now tell the camera where to draw the preview.
-            try {
-                mCamera.setPreviewDisplay(holder);
-                mCamera.startPreview();
-            } catch (IOException e) {
-                Utils.log("Error setting camera preview: " + e.getMessage());
-            }
+        return mediaFile;
+    }
 
-        }
+    static Intent sIntent;
 
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Utils.log(TAG + " surfaceChanged");
-            // If your preview can change or rotate, take care of those events here.
-            // Make sure to stop the preview before resizing or reformatting it.
-
-            if (holder.getSurface() == null) {
-                // preview surface does not exist
-                return;
-            }
-
-            // stop preview before making changes
-            try {
-                mCamera.stopPreview();
-            } catch (Exception e) {
-                // ignore: tried to stop a non-existent preview
-            }
-
-            // set preview size and make any resize, rotate or
-            // reformatting changes here
-
-            // start preview with new settings
-            try {
-                mCamera.setPreviewDisplay(holder);
-                mCamera.startPreview();
-
-            } catch (Exception e) {
-                Utils.log("Error starting camera preview: " + e.getMessage());
-            }
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-            Utils.log(TAG + " surafceDestroyed");
-
-        }
-
-
-        private List<Camera.Size> mSizes;
-
-        private List<Camera.Size> getSupportedPictureSizes() {
-            if (mCamera == null)
-                return null;
-            return mCamera.getParameters().getSupportedPictureSizes();
-        }
-
-        private void setLargestPictureSize() {
-            mSizes = getSupportedPictureSizes();
-            if (mCamera == null || mSizes == null) return;
-            Camera.Parameters params = mCamera.getParameters();
-            int maxSize = 0;
-            int height = 0;
-            int width = 0;
-            for (int i = 0; i < mSizes.size(); i++) {
-                Camera.Size size = mSizes.get(i);
-                if (maxSize <= size.height * size.width) {
-                    height = size.height;
-                    width = size.width;
-                    maxSize = height * width;
-                }
-            }
-            params.setPictureSize(width, height);
-
-            Utils.log("size = " + params.getPictureSize().width + " " + params.getPictureSize().height);
-            mCamera.setParameters(params);
-        }
-
-        /**
-         * Create a File for saving an image or video
-         */
-        private File getOutputMediaFile(int type) {
-            Utils.log("getOutputMediaFile");
-
-            // To be safe, you should check that the SDCard is mounted
-            // using Environment.getExternalStorageState() before doing this.
-
-            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "BabyCam");
-            //        File mediaStorageDir = Environment.getExternalStoragePublicDirectory(
-            //                Environment.DIRECTORY_DCIM);
-            // This location works best if you want the created images to be shared
-            // between applications and persist after your app has been uninstalled.
-
-            // Create the storage directory if it does not exist
-            if (!mediaStorageDir.exists()) {
-                if (!mediaStorageDir.mkdirs()) {
-                    Utils.log("failed to create directory: MyCameraApp");
-                    return null;
-                }
-            }
-
-            // Create a media file name
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-            File mediaFile;
-            if (type == MEDIA_TYPE_IMAGE) {
-                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                        "BABYPIC_" + timeStamp + ".jpg");
-            } else if (type == MEDIA_TYPE_VIDEO) {
-                mediaFile = new File(mediaStorageDir.getPath() + File.separator +
-                        "VID_" + timeStamp + ".mp4");
-            } else {
-                return null;
-            }
-
-            return mediaFile;
-        }
+    // Unify the intent to start this service
+    public static Intent getIntent() {
+        Utils.log(TAG + " getIntent() 11");
+        if (sIntent != null) return sIntent;
+        Utils.log(TAG + " getIntent() 22");
+        sIntent = new Intent("felix.duan.CamService");
+        sIntent.setClassName("com.moveit.felixduan.babycam", "com.moveit.felixduan.babycam.CamService");
+        return sIntent;
+    }
 }
