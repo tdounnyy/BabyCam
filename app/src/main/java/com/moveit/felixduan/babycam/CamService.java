@@ -3,6 +3,7 @@ package com.moveit.felixduan.babycam;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.os.Environment;
 import android.os.Handler;
@@ -90,7 +91,9 @@ public class CamService extends Service implements SurfaceHolder.Callback {
         super.onCreate();
         Utils.log(TAG + " onCreate");
         mSurface = new SurfaceView(this);
+        mSurface.setZOrderOnTop(true);
         mSurface.getHolder().addCallback(this);
+        mSurface.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         mWindowManger = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
     }
@@ -138,14 +141,15 @@ public class CamService extends Service implements SurfaceHolder.Callback {
         Utils.log(TAG + " addView");
         mFloatView = getFloatView(this);
         FrameLayout container = (FrameLayout) mFloatView.findViewById(R.id.camera_preview);
-        container.addView(mSurface);
-        WindowManager.LayoutParams param = new WindowManager.LayoutParams();
-        param.width = 1052; // Magic hack
-        param.height = 780;// Magic hack
-        param.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
-        param.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-        param.gravity = Gravity.CENTER;
+        //container.addView(mSurface);
+        mFloatView.addView(mSurface);
+        WindowManager.LayoutParams param
+                = new WindowManager.LayoutParams(1, 1,
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                PixelFormat.TRANSPARENT);
+        param.gravity = Gravity.TOP;
         param.setTitle("CamSurface");
         mWindowManger.addView(mFloatView, param);
     }
