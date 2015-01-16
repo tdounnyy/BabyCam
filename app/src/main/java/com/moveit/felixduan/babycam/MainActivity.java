@@ -13,11 +13,9 @@ import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
-// TODO Code refactor
+// TODO Refactor code
 // TODO Preview size chop & adjust layout
 // TODO Prevent system sleep
-// TODO Dim screen to save power and protect screen
-// TODO Time lape picker
 // TODO Storage take up calculate
 // TODO Photo save location toast
 // TODO POWER_BTN behavior
