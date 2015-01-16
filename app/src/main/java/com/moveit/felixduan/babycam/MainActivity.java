@@ -15,7 +15,6 @@ import android.widget.ToggleButton;
 
 // TODO Refactor code
 // TODO Preview size chop & adjust layout
-// TODO Prevent system sleep
 // TODO Storage take up calculate
 // TODO Photo save location toast
 // TODO POWER_BTN behavior

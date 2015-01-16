@@ -8,6 +8,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.PowerManager;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -32,6 +33,10 @@ public class CamService extends Service implements SurfaceHolder.Callback {
     private ViewGroup mFloatView;
 
     public static boolean isRunning = false;
+
+    // Prevent system sleep
+    // TODO merge with isRunning
+    private PowerManager.WakeLock mLock;
 
     private static final int TAKE_PIC = 1;
     private int mLapse = 5000;
@@ -106,6 +111,9 @@ public class CamService extends Service implements SurfaceHolder.Callback {
 
         mWorker.sendEmptyMessageDelayed(TAKE_PIC, 1000);
         isRunning = true;
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        mLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "BabyCam");
+        mLock.acquire();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -121,6 +129,7 @@ public class CamService extends Service implements SurfaceHolder.Callback {
         }
         mFloatView = null;
 
+        mLock.release();
         isRunning = false;
         super.onDestroy();
     }
