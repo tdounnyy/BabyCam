@@ -13,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
+// TODO Share preference between Activity & Service
 // TODO Preview size chop & adjust layout
 // TODO Storage take up calculate
 // TODO Photo save location toast
