@@ -91,9 +91,7 @@ public class CamService extends Service implements SurfaceHolder.Callback {
         super.onCreate();
         Utils.log(TAG + " onCreate");
         mSurface = new SurfaceView(this);
-        mSurface.setZOrderOnTop(true);
         mSurface.getHolder().addCallback(this);
-        mSurface.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         mWindowManger = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
     }
@@ -140,8 +138,6 @@ public class CamService extends Service implements SurfaceHolder.Callback {
     private void addView() {
         Utils.log(TAG + " addView");
         mFloatView = getFloatView(this);
-        FrameLayout container = (FrameLayout) mFloatView.findViewById(R.id.camera_preview);
-        //container.addView(mSurface);
         mFloatView.addView(mSurface);
         WindowManager.LayoutParams param
                 = new WindowManager.LayoutParams(1, 1,
