@@ -13,7 +13,6 @@ import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
-// TODO Refactor code
 // TODO Preview size chop & adjust layout
 // TODO Storage take up calculate
 // TODO Photo save location toast
@@ -46,7 +45,7 @@ public class MainActivity extends Activity
     private View.OnClickListener mClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Utils.log("button onClick " + CamService.isRunning);
+            Utils.log("button onClick " + CamService.isRunning());
             switch (v.getId()) {
                 case R.id.button_capture:
                     if (mShootBtn.isChecked()) {
@@ -94,7 +93,7 @@ public class MainActivity extends Activity
     protected void onResume() {
         super.onResume();
         Utils.log("onResume");
-        openCamera();
+        mHandler.sendEmptyMessage(MSG_OPEN_CAMERA);
     }
 
     private void openCamera() {
@@ -135,7 +134,7 @@ public class MainActivity extends Activity
     @Override
     protected void onStart() {
         super.onStart();
-        Utils.log("onStart serviceLive = " + CamService.isRunning);
+        Utils.log("onStart serviceLive = " + CamService.isRunning());
         stopService(CamService.getIntent());
     }
 
