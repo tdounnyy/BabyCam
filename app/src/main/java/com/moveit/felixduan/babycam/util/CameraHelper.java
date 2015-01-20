@@ -2,9 +2,11 @@ package com.moveit.felixduan.babycam.util;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.Camera.Size;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.DisplayMetrics;
 import android.widget.Toast;
 
 import java.io.File;
@@ -20,15 +22,17 @@ import java.util.List;
  */
 public class CameraHelper {
 
+    private boolean mBg; // Preview running in background
     private PrefHelper mPrefHelper;
     private Context mContext;
     private Camera mCamera;
-    private List<Camera.Size> mSizes;
+    private List<Size> mSizes;
     public CameraPreview mPreview;
 
-    public CameraHelper(Context context, Camera c) {
+    public CameraHelper(Context context, Camera c, boolean background) {
         Utils.log("CameraHelper   constructor");
         mContext = context;
+        mBg = background;
         mPrefHelper = new PrefHelper(context);
         resetCamera();
         //mCamera = getCameraInstance();
@@ -36,6 +40,7 @@ public class CameraHelper {
         mPreview = new CameraPreview(mContext, mCamera);
         mSizes = getSupportedPictureSizes();
         setLargestPictureSize();
+        setPreviewSize();
     }
 
     public void resetCamera() {
@@ -53,7 +58,7 @@ public class CameraHelper {
         }
     }
 
-    private List<Camera.Size> getSupportedPictureSizes() {
+    private List<Size> getSupportedPictureSizes() {
         if (mCamera == null)
             return null;
         return mCamera.getParameters().getSupportedPictureSizes();
@@ -65,17 +70,17 @@ public class CameraHelper {
         int maxSize = 0;
         int height = 0;
         int width = 0;
-        for (int i = 0; i < mSizes.size(); i++ ) {
-            Camera.Size size = mSizes.get(i);
+        for (int i = 0; i < mSizes.size(); i++) {
+            Size size = mSizes.get(i);
             if (maxSize <= size.height * size.width) {
                 height = size.height;
                 width = size.width;
                 maxSize = height * width;
             }
         }
-        params.setPictureSize(width,height);
-        mPrefHelper.setResolution(width,height);
-        for (int i: mPrefHelper.getResolution()) {
+        params.setPictureSize(width, height);
+        mPrefHelper.setResolution(width, height);
+        for (int i : mPrefHelper.getResolution()) {
             Utils.log("resolution " + i);
         }
 
@@ -83,15 +88,67 @@ public class CameraHelper {
         mCamera.setParameters(params);
     }
 
+    private void setPreviewSize() {
+        if (mCamera == null) return;
+        List<Size> list = mCamera.getParameters().getSupportedPreviewSizes();
+        Size previewSize;
+        // Show lowest preview when background shoting
+        if (mBg) {
+            previewSize = getOptimalPreviewSize(list, 1, 1);
+        } else {
+            DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
+            previewSize = getOptimalPreviewSize(list, metrics.widthPixels, metrics.heightPixels);
+        }
+        if (previewSize != null)
+            mCamera.getParameters().setPreviewSize(previewSize.width, previewSize.height);
+        //for (Size sz : list) {
+        //    Utils.log("setPreviewSize w:" + sz.width + " h:" + sz.height + " ratio:" + ((float)sz.height/sz.width));
+        //}
+    }
+
+    private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.05;
+        double targetRatio = (double) w / h;
+
+        if (sizes == null) return null;
+
+        Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+        int targetHeight = h;
+
+        // Find size
+        for (Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        Utils.log("getOptimalPreviewSize " + optimalSize.width + " " + optimalSize.height);
+        return optimalSize;
+    }
+
     /**
      * Take Picture with a certain delay.
+     *
      * @param delay < 0, stop shooting.
      *              delay == 0, refresh lapse before shooting
      *              delay > 0, shoot after delay
      */
     public void takePictureDelay(int delay) {
         Utils.log("takePictureDelay");
-        if (delay <0 ) {
+        if (delay < 0) {
             stopShooting();
             return;
         }
@@ -107,7 +164,7 @@ public class CameraHelper {
 
     private static final int TAKE_PIC = 1;
     private int mLapse = 5000;
-    Handler mWorker = new Handler(){
+    Handler mWorker = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);

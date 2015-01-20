@@ -19,7 +19,6 @@ import com.moveit.felixduan.babycam.util.CameraHelper;
 import com.moveit.felixduan.babycam.util.PrefHelper;
 import com.moveit.felixduan.babycam.util.Utils;
 
-// TODO Preview size chop & adjust layout
 // TODO Storage take up calculate
 // TODO Photo save location toast
 // TODO POWER_BTN behavior
@@ -152,7 +151,7 @@ public class MainActivity extends Activity
         try {
             c = Camera.open(); // attempt to get a Camera instance
             if (c != null) {
-                mCameraHelper = new CameraHelper(this, c);
+                mCameraHelper = new CameraHelper(this, c, false);
                 // Create our Preview view and set it as the content of our activity.
                 FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
                 preview.addView(mCameraHelper.mPreview);

@@ -90,7 +90,7 @@ public class CamService extends Service {
         try {
             c = Camera.open(); // attempt to get a Camera instance
             if (c != null) {
-                mCameraHelper = new CameraHelper(this, c);
+                mCameraHelper = new CameraHelper(this, c, true);
                 // Create our Preview view and set it as the content of our activity.
                 addView(mCameraHelper.mPreview);
                 mCameraHelper.takePictureDelay(0);
