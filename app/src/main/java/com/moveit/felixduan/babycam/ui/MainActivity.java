@@ -1,4 +1,4 @@
-package com.moveit.felixduan.babycam;
+package com.moveit.felixduan.babycam.ui;
 
 import android.app.Activity;
 import android.content.res.Configuration;
@@ -13,6 +13,12 @@ import android.widget.FrameLayout;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
+import com.moveit.felixduan.babycam.R;
+import com.moveit.felixduan.babycam.service.CamService;
+import com.moveit.felixduan.babycam.util.CameraHelper;
+import com.moveit.felixduan.babycam.util.PrefHelper;
+import com.moveit.felixduan.babycam.util.Utils;
+
 // TODO Share preference between Activity & Service
 // TODO Preview size chop & adjust layout
 // TODO Storage take up calculate
@@ -26,16 +32,27 @@ public class MainActivity extends Activity
     private ToggleButton mShootBtn;
     private Spinner mLapseSpinner;
     private int[] mLapseValues;
+    private PrefHelper mPrefHelper;
 
     private static final int MSG_OPEN_CAMERA = 1;
+    private static final int MSG_SHOT_ON_START = 2;
     private Handler mHandler = new Handler(new Handler.Callback() {
 
         @Override
         public boolean handleMessage(Message msg) {
+            Utils.log("handleMessage() " + msg.what);
             switch (msg.what) {
                 case MSG_OPEN_CAMERA:
                     openCamera();
                     break;
+                case MSG_SHOT_ON_START:
+                    if (mCameraHelper != null) {
+                        mCameraHelper.takePictureDelay(0);
+                        // Manually change button state
+                        mShootBtn.setChecked(true);
+                        mShootBtn.setTextColor(0xffff0000);
+                    } else
+                        mHandler.sendEmptyMessageDelayed(MSG_SHOT_ON_START, 200);
                 default:
                     break;
             }
@@ -73,6 +90,7 @@ public class MainActivity extends Activity
 
 
         setContentView(R.layout.activity_main);
+        mPrefHelper = new PrefHelper(this);
 
         // Add a listener to the Capture button
         mShootBtn = (ToggleButton) findViewById(R.id.button_capture);
@@ -91,10 +109,42 @@ public class MainActivity extends Activity
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        Utils.log("onStart serviceLive = " + CamService.isRunning());
+        if (CamService.isRunning()) {
+            mHandler.sendEmptyMessageDelayed(MSG_SHOT_ON_START, 200);
+            stopService(CamService.getIntent());
+        }
+        int lapse = mPrefHelper.getLapse();
+        int index = 0;
+        for (int n :mLapseValues) {
+            if (lapse == n)
+                mLapseSpinner.setSelection(index);
+            index++;
+        }
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         Utils.log("onResume");
         mHandler.sendEmptyMessage(MSG_OPEN_CAMERA);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Utils.log("onPause");
+        if (mCameraHelper != null) {
+            mCameraHelper.stopShooting();
+            mCameraHelper.resetCamera();
+        }
+
+        if (mShootBtn.isChecked())
+            startService(CamService.getIntent());
+        mShootBtn.setChecked(false);
+        mShootBtn.setTextColor(0xffffffff);
     }
 
     private void openCamera() {
@@ -117,53 +167,6 @@ public class MainActivity extends Activity
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Utils.log("onPause");
-        if (mCameraHelper != null) {
-            mCameraHelper.stopShooting();
-            mCameraHelper.resetCamera();
-        }
-
-        if (mShootBtn.isChecked())
-            startService(CamService.getIntent());
-        mShootBtn.setChecked(false);
-        mShootBtn.setTextColor(0xffffffff);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Utils.log("onStart serviceLive = " + CamService.isRunning());
-        stopService(CamService.getIntent());
-    }
-
-    @Override
-    protected void onRestart() {
-        super.onRestart();
-        Utils.log("onRestart");
-    }
-
-    @Override
-    protected void onPostResume() {
-        super.onPostResume();
-        Utils.log("onPostResume");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        Utils.log("onStop");
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Utils.log("onDestroy");
-    }
-
-
     /*
      * TODO: Here`s something I don`t understand:
      * MainActivity is configured landscape mode.
@@ -181,12 +184,16 @@ public class MainActivity extends Activity
         Utils.log("onConfigurationChanged");
     }
 
+    // Ugly hack. onItemSelected() called on init;
+    int init = -1;
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+        if(init++<0) return;
         Utils.log("onItemSelected " + view.getId() + " " + position + " " + id
                 + " " + mLapseValues[position]);
         if (mCameraHelper != null) {
             mCameraHelper.setTimeLapse(mLapseValues[position]);
+            mPrefHelper.setLapse(mLapseValues[position]);
         }
     }
 

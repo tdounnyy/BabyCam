@@ -1,4 +1,4 @@
-package com.moveit.felixduan.babycam;
+package com.moveit.felixduan.babycam.service;
 
 import android.app.Service;
 import android.content.Context;
@@ -14,6 +14,10 @@ import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+
+import com.moveit.felixduan.babycam.util.CameraHelper;
+import com.moveit.felixduan.babycam.R;
+import com.moveit.felixduan.babycam.util.Utils;
 
 public class CamService extends Service {
     private static final String TAG = "CamService";
@@ -36,7 +40,7 @@ public class CamService extends Service {
         Utils.log(TAG + " getIntent() 22");
         sIntent = new Intent("felix.duan.CamService");
         sIntent.setClassName("com.moveit.felixduan.babycam",
-                "com.moveit.felixduan.babycam.CamService");
+                "com.moveit.felixduan.babycam.service.CamService");
         return sIntent;
     }
 

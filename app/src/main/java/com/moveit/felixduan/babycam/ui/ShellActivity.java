@@ -1,9 +1,12 @@
-package com.moveit.felixduan.babycam;
+package com.moveit.felixduan.babycam.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+
+import com.moveit.felixduan.babycam.service.CamService;
+import com.moveit.felixduan.babycam.R;
 
 import static android.view.View.OnClickListener;
 

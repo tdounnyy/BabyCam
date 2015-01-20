@@ -1,4 +1,4 @@
-package com.moveit.felixduan.babycam;
+package com.moveit.felixduan.babycam.util;
 
 import android.util.Log;
 

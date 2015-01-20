@@ -1,4 +1,4 @@
-package com.moveit.felixduan.babycam;
+package com.moveit.felixduan.babycam.util;
 
 import android.content.Context;
 import android.hardware.Camera;
@@ -20,14 +20,16 @@ import java.util.List;
  */
 public class CameraHelper {
 
+    private PrefHelper mPrefHelper;
     private Context mContext;
     private Camera mCamera;
     private List<Camera.Size> mSizes;
-    protected CameraPreview mPreview;
+    public CameraPreview mPreview;
 
     public CameraHelper(Context context, Camera c) {
         Utils.log("CameraHelper   constructor");
         mContext = context;
+        mPrefHelper = new PrefHelper(context);
         resetCamera();
         //mCamera = getCameraInstance();
         mCamera = c;
@@ -72,17 +74,30 @@ public class CameraHelper {
             }
         }
         params.setPictureSize(width,height);
+        mPrefHelper.setResolution(width,height);
+        for (int i: mPrefHelper.getResolution()) {
+            Utils.log("resolution " + i);
+        }
 
         Utils.log("size = " + params.getPictureSize().width + " " + params.getPictureSize().height);
         mCamera.setParameters(params);
     }
 
+    /**
+     * Take Picture with a certain delay.
+     * @param delay < 0, stop shooting.
+     *              delay == 0, refresh lapse before shooting
+     *              delay > 0, shoot after delay
+     */
     public void takePictureDelay(int delay) {
         Utils.log("takePictureDelay");
-        if (delay <0 )
+        if (delay <0 ) {
             stopShooting();
-        else
-            mWorker.sendEmptyMessageDelayed(TAKE_PIC, delay);
+            return;
+        }
+        if (delay == 0)
+            mLapse = 1000 * mPrefHelper.getLapse();
+        mWorker.sendEmptyMessageDelayed(TAKE_PIC, delay);
     }
 
     public void stopShooting() {

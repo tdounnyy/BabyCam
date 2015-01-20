@@ -16,7 +16,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:label="@string/app_name"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="userLandscape" >
@@ -30,7 +30,7 @@
         </activity>
 
         <service
-            android:name=".CamService"
+            android:name=".service.CamService"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -39,7 +39,7 @@
             </service>
 
         <activity
-            android:name=".ShellActivity"
+            android:name=".ui.ShellActivity"
             android:theme="@android:style/Theme.Holo.Light"
             android:label="@string/title_activity_shell" >
             <intent-filter>
