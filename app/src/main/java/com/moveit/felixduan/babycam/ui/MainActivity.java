@@ -19,7 +19,7 @@ import com.moveit.felixduan.babycam.util.CameraHelper;
 import com.moveit.felixduan.babycam.util.PrefHelper;
 import com.moveit.felixduan.babycam.util.Utils;
 
-// TODO Auto-focus
+// TODO Implement better Auto-Focus policy
 // TODO Storage take up calculate
 // TODO Photo save location toast
 // TODO POWER_BTN behavior
@@ -117,7 +117,7 @@ public class MainActivity extends Activity
         }
         int lapse = mPrefHelper.getLapse();
         int index = 0;
-        for (int n :mLapseValues) {
+        for (int n : mLapseValues) {
             if (lapse == n)
                 mLapseSpinner.setSelection(index);
             index++;
@@ -185,9 +185,10 @@ public class MainActivity extends Activity
 
     // Ugly hack. onItemSelected() called on init;
     int init = -1;
+
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        if(init++<0) return;
+        if (init++ < 0) return;
         Utils.log("onItemSelected " + view.getId() + " " + position + " " + id
                 + " " + mLapseValues[position]);
         if (mCameraHelper != null) {

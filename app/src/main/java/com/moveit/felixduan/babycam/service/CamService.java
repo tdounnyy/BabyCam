@@ -15,8 +15,8 @@ import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
-import com.moveit.felixduan.babycam.util.CameraHelper;
 import com.moveit.felixduan.babycam.R;
+import com.moveit.felixduan.babycam.util.CameraHelper;
 import com.moveit.felixduan.babycam.util.Utils;
 
 public class CamService extends Service {

@@ -2,11 +2,13 @@ package com.moveit.felixduan.babycam.util;
 
 import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.Size;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.DisplayMetrics;
+import android.view.View;
 import android.widget.Toast;
 
 import java.io.File;
@@ -23,11 +25,36 @@ import java.util.List;
 public class CameraHelper {
 
     private boolean mBg; // Preview running in background
+    private boolean mPreviewTouch; // Focus & take pic flag
     private PrefHelper mPrefHelper;
     private Context mContext;
     private Camera mCamera;
     private List<Size> mSizes;
     public CameraPreview mPreview;
+
+    private View.OnClickListener mSurfaceOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Utils.log("surface view onclick");
+            mPreviewTouch = true;
+            mCamera.autoFocus(mAFCallback);
+        }
+    };
+
+    // Focus every shot, is not a good practise & a waite most of time
+    private AutoFocusCallback mAFCallback = new AutoFocusCallback() {
+        @Override
+        public void onAutoFocus(boolean success, Camera camera) {
+            if (mPreviewTouch) {
+                mPreviewTouch = false;
+                return;
+            }
+            // get an image from the camera
+            mCamera.takePicture(null, null, mPicture);
+            Toast.makeText(mContext, "take picture", Toast.LENGTH_SHORT).show();
+            mWorker.sendEmptyMessageDelayed(TAKE_PIC, mLapse);
+        }
+    };
 
     public CameraHelper(Context context, Camera c, boolean background) {
         Utils.log("CameraHelper   constructor");
@@ -35,12 +62,13 @@ public class CameraHelper {
         mBg = background;
         mPrefHelper = new PrefHelper(context);
         resetCamera();
-        //mCamera = getCameraInstance();
         mCamera = c;
         mPreview = new CameraPreview(mContext, mCamera);
+        mPreview.setOnClickListener(mSurfaceOnClickListener);
         mSizes = getSupportedPictureSizes();
         setLargestPictureSize();
         setPreviewSize();
+        setAutoFocus();
     }
 
     public void resetCamera() {
@@ -80,9 +108,9 @@ public class CameraHelper {
         }
         params.setPictureSize(width, height);
         mPrefHelper.setResolution(width, height);
-        for (int i : mPrefHelper.getResolution()) {
-            Utils.log("resolution " + i);
-        }
+        //for (int i : mPrefHelper.getResolution()) {
+        //    Utils.log("resolution " + i);
+        //}
 
         Utils.log("size = " + params.getPictureSize().width + " " + params.getPictureSize().height);
         mCamera.setParameters(params);
@@ -101,11 +129,9 @@ public class CameraHelper {
         }
         if (previewSize != null)
             mCamera.getParameters().setPreviewSize(previewSize.width, previewSize.height);
-        //for (Size sz : list) {
-        //    Utils.log("setPreviewSize w:" + sz.width + " h:" + sz.height + " ratio:" + ((float)sz.height/sz.width));
-        //}
     }
 
+    // Wheel invented by others
     private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
         final double ASPECT_TOLERANCE = 0.05;
         double targetRatio = (double) w / h;
@@ -137,6 +163,16 @@ public class CameraHelper {
         }
         Utils.log("getOptimalPreviewSize " + optimalSize.width + " " + optimalSize.height);
         return optimalSize;
+    }
+
+    private void setAutoFocus() {
+        List<String> focusModes = mCamera.getParameters().getSupportedFocusModes();
+        for (String mode : focusModes) {
+            Utils.log("setAutoFocus  support: " + mode);
+        }
+        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+            mCamera.getParameters().setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        }
     }
 
     /**
@@ -171,10 +207,7 @@ public class CameraHelper {
             switch (msg.what) {
                 case TAKE_PIC:
                     Utils.log("handleMessage TAKE_PIC");
-                    // get an image from the camera
-                    mCamera.takePicture(null, null, mPicture);
-                    Toast.makeText(mContext, "take picture", Toast.LENGTH_SHORT).show();
-                    mWorker.sendEmptyMessageDelayed(TAKE_PIC, mLapse);
+                    mCamera.autoFocus(mAFCallback);
                     break;
                 default:
                     break;
