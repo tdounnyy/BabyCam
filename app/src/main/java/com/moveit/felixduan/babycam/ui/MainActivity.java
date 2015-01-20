@@ -19,6 +19,7 @@ import com.moveit.felixduan.babycam.util.CameraHelper;
 import com.moveit.felixduan.babycam.util.PrefHelper;
 import com.moveit.felixduan.babycam.util.Utils;
 
+// TODO Auto-focus
 // TODO Storage take up calculate
 // TODO Photo save location toast
 // TODO POWER_BTN behavior
